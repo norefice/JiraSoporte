@@ -9,6 +9,7 @@
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -29,6 +30,7 @@
         <div id="metrics">
             <!-- Metrics will be displayed here -->
         </div>
+        <h2>Gráfico de Issues</h2>
         <canvas id="issuesChart" width="400" height="200"></canvas>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

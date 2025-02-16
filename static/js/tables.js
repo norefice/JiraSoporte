@@ -52,19 +52,19 @@ function renderTables(data) {
         }
     });
 
-    var orgTableHtml = '<div class="table-container"><table class="striped"><thead><tr><th>Organization Name</th><th>Total Issues</th><th>Open Issues</th><th>Closed Issues</th></tr></thead><tbody>';
+    var orgTableHtml = '<h2>Issues por Organización</h2><button onclick="exportTableToExcel(\'orgTable\', \'issues_por_organizacion\')">Exportar a Excel</button><div class="table-container"><table id="orgTable" class="striped"><thead><tr><th>Organization Name</th><th>Total Issues</th><th>Open Issues</th><th>Closed Issues</th></tr></thead><tbody>';
     for (var orgName in organizationMetrics) {
         orgTableHtml += `<tr><td>${orgName}</td><td>${organizationMetrics[orgName].total}</td><td>${organizationMetrics[orgName].open}</td><td>${organizationMetrics[orgName].closed}</td></tr>`;
     }
     orgTableHtml += '</tbody></table></div>';
 
-    var requestTypeTableHtml = '<div class="table-container"><table class="striped"><thead><tr><th>Request Type Name</th><th>Total Issues</th></tr></thead><tbody>';
+    var requestTypeTableHtml = '<h2>Issues por Tipo de Solicitud</h2><button onclick="exportTableToExcel(\'requestTypeTable\', \'issues_por_tipo_de_solicitud\')">Exportar a Excel</button><div class="table-container"><table id="requestTypeTable" class="striped"><thead><tr><th>Request Type Name</th><th>Total Issues</th></tr></thead><tbody>';
     for (var requestTypeName in requestTypeMetrics) {
         requestTypeTableHtml += `<tr><td>${requestTypeName}</td><td>${requestTypeMetrics[requestTypeName]}</td></tr>`;
     }
     requestTypeTableHtml += '</tbody></table></div>';
 
-    var requestTypeByOrgTableHtml = '<div class="table-container"><table class="striped"><thead><tr><th>Request Type</th>';
+    var requestTypeByOrgTableHtml = '<h2>Issues por Tipo de Solicitud y Organización</h2><button onclick="exportTableToExcel(\'requestTypeByOrgTable\', \'issues_por_tipo_de_solicitud_y_organizacion\')">Exportar a Excel</button><div class="table-container"><table id="requestTypeByOrgTable" class="striped"><thead><tr><th>Request Type</th>';
     for (var orgName in organizationMetrics) {
         requestTypeByOrgTableHtml += `<th>${orgName} (Open)</th><th>${orgName} (Closed)</th>`;
     }
@@ -83,4 +83,23 @@ function renderTables(data) {
     metricsDiv.innerHTML = orgTableHtml + '<br>' + requestTypeTableHtml + '<br>' + requestTypeByOrgTableHtml;
 
     return { createdIssues, resolvedIssues };
+}
+
+function exportTableToExcel(tableID, filename = '') {
+    var table = document.getElementById(tableID);
+    var wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+    function s2ab(s) {
+        var buf = new ArrayBuffer(s.length);
+        var view = new Uint8Array(buf);
+        for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+    }
+
+    var blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename ? filename + '.xlsx' : 'excel_data.xlsx';
+    link.click();
 }
