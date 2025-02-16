@@ -42,22 +42,22 @@ def issue_search(jql="project = SOP", max_results=2000, start_at=0, start_date=N
             "issuetype",          # Issue Type
             "key",                # Issue Key
             "status",             # Status
-            "customfield_10002",  # Organizations
-            "customfield_10010",  # Request Type
+            config.CUSTOM_FIELDS["organizations"],  # Organizations
+            config.CUSTOM_FIELDS["request_type"],   # Request Type
             "summary",            # Summary
-            "customfield_10066",  # Impacto
-            "customfield_10004",  # Impact
-            "customfield_10060",  # Vulnerability
-            "customfield_10067",  # Information
-            "customfield_10101",  # Severity
+            config.CUSTOM_FIELDS["impacto"],        # Impacto
+            config.CUSTOM_FIELDS["impact"],         # Impact
+            config.CUSTOM_FIELDS["vulnerability"],  # Vulnerability
+            config.CUSTOM_FIELDS["information"],    # Information
+            config.CUSTOM_FIELDS["severity"],       # Severity
             "labels",             # Labels
             "creator",            # Creator
-            "customfield_10034",  # Satisfaction
-            "customfield_10024",  # Date of First Response
+            config.CUSTOM_FIELDS["satisfaction"],   # Satisfaction
+            config.CUSTOM_FIELDS["date_of_first_response"],  # Date of First Response
             "resolutiondate",     # Resolved
-            "customfield_10094",  # Time to resolution
-            "customfield_10095",  # Time to first response
-            "customfield_10098"   # Time to resolution
+            config.CUSTOM_FIELDS["time_to_resolution"],      # Time to resolution
+            config.CUSTOM_FIELDS["time_to_first_response"],  # Time to first response
+            config.CUSTOM_FIELDS["time_to_resolution_custom"]  # Time to resolution
         ],
         "fieldsByKeys": True,
         "jql": jql,
@@ -84,21 +84,21 @@ def issue_search(jql="project = SOP", max_results=2000, start_at=0, start_date=N
                 "resolution_date": date_format(fields.get("resolutiondate")),
                 "creator_name": fields.get("creator", {}).get("displayName"),
                 "creator_email": fields.get("creator", {}).get("emailAddress"),
-                "request_type_name": fields.get("customfield_10010", {}).get("requestType", {}).get("name"),
-                "current_status": fields.get("customfield_10010", {}).get("currentStatus", {}).get("status"),
-                "organization_name": next((org.get("name") for org in issue["fields"].get("customfield_10002", [])), ""),
-                "organization_id": next((int(org.get("id")) for org in issue["fields"].get("customfield_10002", [])), ""),
-                "impacto": fields.get("customfield_10066"),
-                "impact": fields.get("customfield_10004"),
-                "vulnerability": fields.get("customfield_10060"),
-                "information": fields.get("customfield_10067"),
-                "severity": fields.get("customfield_10101"),
+                "request_type_name": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("requestType", {}).get("name"),
+                "current_status": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("currentStatus", {}).get("status"),
+                "organization_name": next((org.get("name") for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
+                "organization_id": next((int(org.get("id")) for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
+                "impacto": fields.get(config.CUSTOM_FIELDS["impacto"]),
+                "impact": fields.get(config.CUSTOM_FIELDS["impact"]),
+                "vulnerability": fields.get(config.CUSTOM_FIELDS["vulnerability"]),
+                "information": fields.get(config.CUSTOM_FIELDS["information"]),
+                "severity": fields.get(config.CUSTOM_FIELDS["severity"]),
                 "labels": fields.get("labels"),
-                "satisfaction": fields.get("customfield_10034"),
-                "date_of_first_response": date_format(fields.get("customfield_10024")),
-                "time_to_resolution": date_format(get_breach_time(fields.get("customfield_10094"))),
-                "time_to_first_response": date_format(get_breach_time(fields.get("customfield_10095"))),
-                "time_to_resolution_custom": date_format(fields.get("customfield_10098"))
+                "satisfaction": fields.get(config.CUSTOM_FIELDS["satisfaction"]),
+                "date_of_first_response": date_format(fields.get(config.CUSTOM_FIELDS["date_of_first_response"])),
+                "time_to_resolution": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_resolution"]))),
+                "time_to_first_response": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_first_response"]))),
+                "time_to_resolution_custom": date_format(fields.get(config.CUSTOM_FIELDS["time_to_resolution_custom"]))
             }
             processed_issues.append(processed_issue)
         print(processed_issues) #DEBUG

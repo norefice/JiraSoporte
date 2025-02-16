@@ -4,7 +4,7 @@
 
 ## Descripción
 
-JIRA Metrics Dashboard es una aplicación web que permite visualizar métricas de JIRA, incluyendo el número de issues creadas, resueltas, y su distribución por organización y tipo de solicitud. La aplicación está construida con Flask y utiliza Chart.js para la visualización de datos.
+JIRA Metrics Dashboard es una aplicación web que permite visualizar métricas de JIRA Service Project, incluyendo el número de issues creadas, resueltas, y su distribución por organización y tipo de solicitud. La aplicación está construida con Flask y utiliza Chart.js para la visualización de datos.
 
 ## Características
 
@@ -12,6 +12,7 @@ JIRA Metrics Dashboard es una aplicación web que permite visualizar métricas d
 - Tablas que muestran el número total de issues, issues abiertas y cerradas por organización.
 - Tablas que muestran el número total de issues por tipo de solicitud y su distribución por organización.
 - Selector de fechas para filtrar los datos mostrados.
+- Configuración de campos personalizados de JIRA.
 
 ## Instalación
 
@@ -49,6 +50,22 @@ JIRA Metrics Dashboard es una aplicación web que permite visualizar métricas d
     JIRA_USER = "tu-correo@dominio.com"
     JIRA_API_TOKEN = "tu-api-token"
     PROJECT_CODE = "CODIGO_DEL_PROYECTO"
+
+    # Campos personalizados de JIRA
+    CUSTOM_FIELDS = {
+        "organizations": "customfield_10002",
+        "request_type": "customfield_10010",
+        "impacto": "customfield_10066",
+        "impact": "customfield_10004",
+        "vulnerability": "customfield_10060",
+        "information": "customfield_10067",
+        "severity": "customfield_10101",
+        "satisfaction": "customfield_10034",
+        "date_of_first_response": "customfield_10024",
+        "time_to_resolution": "customfield_10094",
+        "time_to_first_response": "customfield_10095",
+        "time_to_resolution_custom": "customfield_10098"
+    }
     ```
 
 ## Uso
