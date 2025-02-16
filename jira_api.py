@@ -17,7 +17,7 @@ def get_issues():
     response = requests.get(url, headers=headers, auth=auth, params=query)
     return response.json()
 
-def issue_search(jql="project = SOP", max_results=2000, start_at=0, start_date=None, end_date=None):
+def issue_search(jql="project = SOP", max_results=100, start_at=0, start_date=None, end_date=None):
     url = f"{config.JIRA_URL}/rest/api/3/search"
     auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
     headers = {
@@ -35,82 +35,90 @@ def issue_search(jql="project = SOP", max_results=2000, start_at=0, start_date=N
 
     jql += date_filter
 
-    payload = json.dumps({
-        "expand": [],
-        "fields": [
-            "created",            # Created
-            "issuetype",          # Issue Type
-            "key",                # Issue Key
-            "status",             # Status
-            config.CUSTOM_FIELDS["organizations"],  # Organizations
-            config.CUSTOM_FIELDS["request_type"],   # Request Type
-            "summary",            # Summary
-            config.CUSTOM_FIELDS["impacto"],        # Impacto
-            config.CUSTOM_FIELDS["impact"],         # Impact
-            config.CUSTOM_FIELDS["vulnerability"],  # Vulnerability
-            config.CUSTOM_FIELDS["information"],    # Information
-            config.CUSTOM_FIELDS["severity"],       # Severity
-            "labels",             # Labels
-            "creator",            # Creator
-            config.CUSTOM_FIELDS["satisfaction"],   # Satisfaction
-            config.CUSTOM_FIELDS["date_of_first_response"],  # Date of First Response
-            "resolutiondate",     # Resolved
-            config.CUSTOM_FIELDS["time_to_resolution"],      # Time to resolution
-            config.CUSTOM_FIELDS["time_to_first_response"],  # Time to first response
-            config.CUSTOM_FIELDS["time_to_resolution_custom"]  # Time to resolution
-        ],
-        "fieldsByKeys": True,
-        "jql": jql,
-        "maxResults": max_results,
-        "startAt": start_at
-    })
+    all_issues = []
+    total = 1  # Inicializamos con un valor mayor a start_at para entrar en el bucle
 
-    response = requests.post(url, data=payload, headers=headers, auth=auth)
+    while start_at < total:
+        payload = json.dumps({
+            "expand": [],
+            "fields": [
+                "created",            # Created
+                "issuetype",          # Issue Type
+                "key",                # Issue Key
+                "status",             # Status
+                config.CUSTOM_FIELDS["organizations"],  # Organizations
+                config.CUSTOM_FIELDS["request_type"],   # Request Type
+                "summary",            # Summary
+                config.CUSTOM_FIELDS["impacto"],        # Impacto
+                config.CUSTOM_FIELDS["impact"],         # Impact
+                config.CUSTOM_FIELDS["vulnerability"],  # Vulnerability
+                config.CUSTOM_FIELDS["information"],    # Information
+                config.CUSTOM_FIELDS["severity"],       # Severity
+                "labels",             # Labels
+                "creator",            # Creator
+                config.CUSTOM_FIELDS["satisfaction"],   # Satisfaction
+                config.CUSTOM_FIELDS["date_of_first_response"],  # Date of First Response
+                "resolutiondate",     # Resolved
+                config.CUSTOM_FIELDS["time_to_resolution"],      # Time to resolution
+                config.CUSTOM_FIELDS["time_to_first_response"],  # Time to first response
+                config.CUSTOM_FIELDS["time_to_resolution_custom"]  # Time to resolution
+            ],
+            "fieldsByKeys": True,
+            "jql": jql,
+            "maxResults": max_results,
+            "startAt": start_at
+        })
 
-    if response.status_code == 200:
-        data = response.json()
-        issues = data.get("issues", [])
-        processed_issues = []
+        response = requests.post(url, data=payload, headers=headers, auth=auth)
 
-        for issue in issues:
-            fields = issue["fields"]
+        if response.status_code == 200:
+            data = response.json()
+            issues = data.get("issues", [])
+            total = data.get("total", 0)
+            all_issues.extend(issues)
+            start_at += max_results
+        else:
+            print(f"Error en la solicitud: {response.status_code}")
+            print(response.text)
+            return None
 
-            processed_issue = {
-                "issue_id": issue.get("id"),
-                "issue_key": issue.get("key"),
-                "summary": fields.get("summary"),
-                "created": date_format(fields.get("created")),
-                "status": fields["status"].get("name"),
-                "resolution_date": date_format(fields.get("resolutiondate")),
-                "creator_name": fields.get("creator", {}).get("displayName"),
-                "creator_email": fields.get("creator", {}).get("emailAddress"),
-                "request_type_name": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("requestType", {}).get("name"),
-                "current_status": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("currentStatus", {}).get("status"),
-                "organization_name": next((org.get("name") for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
-                "organization_id": next((int(org.get("id")) for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
-                "impacto": fields.get(config.CUSTOM_FIELDS["impacto"]),
-                "impact": fields.get(config.CUSTOM_FIELDS["impact"]),
-                "vulnerability": fields.get(config.CUSTOM_FIELDS["vulnerability"]),
-                "information": fields.get(config.CUSTOM_FIELDS["information"]),
-                "severity": fields.get(config.CUSTOM_FIELDS["severity"]),
-                "labels": fields.get("labels"),
-                "satisfaction": fields.get(config.CUSTOM_FIELDS["satisfaction"]),
-                "date_of_first_response": date_format(fields.get(config.CUSTOM_FIELDS["date_of_first_response"])),
-                "time_to_resolution": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_resolution"]))),
-                "time_to_first_response": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_first_response"]))),
-                "time_to_resolution_custom": date_format(fields.get(config.CUSTOM_FIELDS["time_to_resolution_custom"]))
-            }
-            processed_issues.append(processed_issue)
-        print(processed_issues) #DEBUG
-        for processed_issue in processed_issues:
-            for key, value in processed_issue.items():
-                if value is None:
-                    processed_issue[key] = ""
-        return processed_issues
-    else:
-        print(f"Error en la solicitud: {response.status_code}")
-        print(response.text)
-        return None
+    processed_issues = []
+
+    for issue in all_issues:
+        fields = issue["fields"]
+
+        processed_issue = {
+            "issue_id": issue.get("id"),
+            "issue_key": issue.get("key"),
+            "summary": fields.get("summary"),
+            "created": date_format(fields.get("created")),
+            "status": fields["status"].get("name"),
+            "resolution_date": date_format(fields.get("resolutiondate")),
+            "creator_name": fields.get("creator", {}).get("displayName"),
+            "creator_email": fields.get("creator", {}).get("emailAddress"),
+            "request_type_name": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("requestType", {}).get("name"),
+            "current_status": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("currentStatus", {}).get("status"),
+            "organization_name": next((org.get("name") for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
+            "organization_id": next((int(org.get("id")) for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
+            "impacto": fields.get(config.CUSTOM_FIELDS["impacto"]),
+            "impact": fields.get(config.CUSTOM_FIELDS["impact"]),
+            "vulnerability": fields.get(config.CUSTOM_FIELDS["vulnerability"]),
+            "information": fields.get(config.CUSTOM_FIELDS["information"]),
+            "severity": fields.get(config.CUSTOM_FIELDS["severity"]),
+            "labels": fields.get("labels"),
+            "satisfaction": fields.get(config.CUSTOM_FIELDS["satisfaction"]),
+            "date_of_first_response": date_format(fields.get(config.CUSTOM_FIELDS["date_of_first_response"])),
+            "time_to_resolution": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_resolution"]))),
+            "time_to_first_response": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_first_response"]))),
+            "time_to_resolution_custom": date_format(fields.get(config.CUSTOM_FIELDS["time_to_resolution_custom"]))
+        }
+        processed_issues.append(processed_issue)
+
+    for processed_issue in processed_issues:
+        for key, value in processed_issue.items():
+            if value is None:
+                processed_issue[key] = ""
+    return processed_issues
 
 def date_format(date):
     if isinstance(date, dict):
