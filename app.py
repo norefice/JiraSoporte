@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify
-import metrics
 import jira_api
 
 app = Flask(__name__)

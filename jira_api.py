@@ -4,19 +4,6 @@ import config
 import json
 from datetime import datetime
 
-def get_issues():
-    url = f"{config.JIRA_URL}/rest/api/3/search"
-    auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
-    headers = {
-        "Accept": "application/json"
-    }
-    query = {
-        "jql": f"project={config.PROJECT_CODE}",
-        "maxResults": 1000
-    }
-    response = requests.get(url, headers=headers, auth=auth, params=query)
-    return response.json()
-
 def issue_search(jql="project = SOP", max_results=100, start_at=0, start_date=None, end_date=None):
     url = f"{config.JIRA_URL}/rest/api/3/search"
     auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
