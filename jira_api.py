@@ -17,13 +17,23 @@ def get_issues():
     response = requests.get(url, headers=headers, auth=auth, params=query)
     return response.json()
 
-def issue_search(jql="project = SOP", max_results=2000, start_at=0):
+def issue_search(jql="project = SOP", max_results=2000, start_at=0, start_date=None, end_date=None):
     url = f"{config.JIRA_URL}/rest/api/3/search"
     auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
+
+    date_filter = ""
+    if start_date and end_date:
+        date_filter = f" AND created >= '{start_date}' AND created <= '{end_date}'"
+    elif start_date:
+        date_filter = f" AND created >= '{start_date}'"
+    elif end_date:
+        date_filter = f" AND created <= '{end_date}'"
+
+    jql += date_filter
 
     payload = json.dumps({
         "expand": [],
@@ -91,13 +101,11 @@ def issue_search(jql="project = SOP", max_results=2000, start_at=0):
                 "time_to_resolution_custom": date_format(fields.get("customfield_10098"))
             }
             processed_issues.append(processed_issue)
-
+        print(processed_issues) #DEBUG
         for processed_issue in processed_issues:
             for key, value in processed_issue.items():
                 if value is None:
                     processed_issue[key] = ""
-                    
-        print(processed_issues) #DEBUG
         return processed_issues
     else:
         print(f"Error en la solicitud: {response.status_code}")

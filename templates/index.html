@@ -6,15 +6,35 @@
     <title>JIRA Metrics</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
     <div class="container">
         <h1>JIRA Metrics</h1>
+        <form id="date_form">
+            <div class="row">
+                <div class="input-field col s6">
+                    <input type="text" class="datepicker" id="start_date" name="start_date" readonly>
+                    <label for="start_date">Start Date</label>
+                </div>
+                <div class="input-field col s6">
+                    <input type="text" class="datepicker" id="end_date" name="end_date" readonly>
+                    <label for="end_date">End Date</label>
+                </div>
+            </div>
+            <button type="submit" class="btn">Fetch Data</button>
+        </form>
         <div id="metrics">
             <!-- Metrics will be displayed here -->
         </div>
+        <canvas id="issuesChart" width="400" height="200"></canvas>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tables.js') }}"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
 </body>
 </html>

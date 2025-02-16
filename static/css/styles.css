@@ -1,1 +1,25 @@
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    position: relative;
+}
+
+.table-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-container th, .table-container td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+.table-container th:first-child, .table-container td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 1;
+}
+
 /* Add your custom styles here */
