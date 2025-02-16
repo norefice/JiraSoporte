@@ -101,4 +101,4 @@ Este proyecto está licenciado bajo la Licencia MIT. Consulta el archivo [LICENS
 
 ## Contacto
 
-Si tienes alguna pregunta o sugerencia, no dudes en contactarme a través de [norefice+jiraSoporte@gmail.com](norefice+jiraSoporte@gmail.com).
+Si tienes alguna pregunta o sugerencia, no dudes en contactarme a través de [Github Issues](https://github.com/norefice/JiraSoporte/issues/new).
