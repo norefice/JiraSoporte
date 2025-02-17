@@ -30,8 +30,23 @@
         <div id="metrics">
             <!-- Metrics will be displayed here -->
         </div>
-        <h2>Gráfico de Issues</h2>
-        <canvas id="issuesChart" width="400" height="200"></canvas>
+        <h2 id="issuesChartTitle" style="display: none;">Gráfico de Issues</h2>
+        <canvas id="issuesChart" width="400" height="200" style="display: none;"></canvas>
+    </div>
+    <div id="loadingOverlay">
+        <div class="preloader-wrapper active">
+            <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left">
+                    <div class="circle"></div>
+                </div>
+                <div class="gap-patch">
+                    <div class="circle"></div>
+                </div>
+                <div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="{{ url_for('static', filename='js/datepicker.js') }}"></script>

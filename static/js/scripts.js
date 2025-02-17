@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('date_form').addEventListener('submit', function(event) {
         event.preventDefault();
         var formData = new FormData(this);
+        var loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.style.display = 'flex';
         fetch('/issue', {
             method: 'POST',
             body: formData
@@ -54,6 +56,15 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Resolved Data:', resolvedData); // Debugging
 
             renderChart(labels, createdData, resolvedData);
+
+            // Show the chart title and canvas
+            var issuesChartTitle = document.getElementById('issuesChartTitle');
+            var issuesChart = document.getElementById('issuesChart');
+            issuesChartTitle.style.display = 'block';
+            issuesChart.style.display = 'block';
+        })
+        .finally(() => {
+            loadingOverlay.style.display = 'none';
         });
     });
 });
