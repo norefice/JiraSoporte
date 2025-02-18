@@ -53,8 +53,10 @@ function renderTables(data) {
     });
 
     var orgTableHtml = '<h2>Issues por Organización</h2><button class="btn waves-effect waves-light" onclick="exportTableToExcel(\'orgTable\', \'issues_por_organizacion\')">Exportar a Excel</button><div class="table-container"><table id="orgTable" class="striped"><thead><tr><th>Organization Name</th><th>Total Issues</th><th>Open Issues</th><th>Closed Issues</th></tr></thead><tbody>';
+    var startDate = document.getElementById('start_date').value;
+    var endDate = document.getElementById('end_date').value;
     for (var orgName in organizationMetrics) {
-        orgTableHtml += `<tr><td>${orgName}</td><td>${organizationMetrics[orgName].total}</td><td>${organizationMetrics[orgName].open}</td><td>${organizationMetrics[orgName].closed}</td></tr>`;
+        orgTableHtml += `<tr><td><a href="/issues_by_org?org_name=${orgName}&start_date=${startDate}&end_date=${endDate}">${orgName}</a></td><td>${organizationMetrics[orgName].total}</td><td>${organizationMetrics[orgName].open}</td><td>${organizationMetrics[orgName].closed}</td></tr>`;
     }
     orgTableHtml += '</tbody></table></div>';
 
@@ -81,6 +83,8 @@ function renderTables(data) {
     requestTypeByOrgTableHtml += '</tbody></table></div>';
 
     metricsDiv.innerHTML = orgTableHtml + '<br>' + requestTypeTableHtml + '<br>' + requestTypeByOrgTableHtml;
+
+    // Remove DataTables initialization
 
     return { createdIssues, resolvedIssues };
 }

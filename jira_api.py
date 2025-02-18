@@ -123,3 +123,7 @@ def get_breach_time(customfield):
     if customfield and "completedCycles" in customfield and customfield["completedCycles"]:
         return customfield["completedCycles"][0].get("breachTime", {}).get("jira")
     return None
+
+def get_issues_by_org(org_name, start_date=None, end_date=None):
+    jql = f"project = SOP AND organizations = '{org_name}'"
+    return issue_search(jql=jql, start_date=start_date, end_date=end_date)
