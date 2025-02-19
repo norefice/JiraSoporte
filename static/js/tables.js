@@ -84,8 +84,6 @@ function renderTables(data) {
 
     metricsDiv.innerHTML = orgTableHtml + '<br>' + requestTypeTableHtml + '<br>' + requestTypeByOrgTableHtml;
 
-    // Remove DataTables initialization
-
     return { createdIssues, resolvedIssues };
 }
 
@@ -105,5 +103,36 @@ function exportTableToExcel(tableID, filename = '') {
     var link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = filename ? filename + '.xlsx' : 'excel_data.xlsx';
+    link.click();
+}
+
+function exportAllTablesToExcel() {
+    var wb = XLSX.utils.book_new();
+
+    var orgTable = document.getElementById('orgTable');
+    var orgSheet = XLSX.utils.table_to_sheet(orgTable);
+    XLSX.utils.book_append_sheet(wb, orgSheet, 'Org Issues');
+
+    var requestTypeTable = document.getElementById('requestTypeTable');
+    var requestTypeSheet = XLSX.utils.table_to_sheet(requestTypeTable);
+    XLSX.utils.book_append_sheet(wb, requestTypeSheet, 'Request Type Issues');
+
+    var requestTypeByOrgTable = document.getElementById('requestTypeByOrgTable');
+    var requestTypeByOrgSheet = XLSX.utils.table_to_sheet(requestTypeByOrgTable);
+    XLSX.utils.book_append_sheet(wb, requestTypeByOrgSheet, 'Request Type by Org');
+
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+    function s2ab(s) {
+        var buf = new ArrayBuffer(s.length);
+        var view = new Uint8Array(buf);
+        for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+    }
+
+    var blob = new Blob([s2ab(wbout)], { type: "application/octet-stream" });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = 'all_tables.xlsx';
     link.click();
 }
