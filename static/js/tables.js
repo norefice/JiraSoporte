@@ -66,16 +66,16 @@ function renderTables(data) {
     }
     requestTypeTableHtml += '</tbody></table></div>';
 
-    var requestTypeByOrgTableHtml = '<h2>Issues por Tipo de Solicitud y Organización</h2><button class="btn waves-effect waves-light" onclick="exportTableToExcel(\'requestTypeByOrgTable\', \'issues_por_tipo_de_solicitud_y_organizacion\')">Exportar a Excel</button><div class="table-container"><table id="requestTypeByOrgTable" class="striped"><thead><tr><th>Request Type</th>';
-    for (var orgName in organizationMetrics) {
-        requestTypeByOrgTableHtml += `<th>${orgName} (Open)</th><th>${orgName} (Closed)</th>`;
+    var requestTypeByOrgTableHtml = '<h2>Issues por Tipo de Solicitud y Organización</h2><button class="btn waves-effect waves-light" onclick="exportTableToExcel(\'requestTypeByOrgTable\', \'issues_por_tipo_de_solicitud_y_organizacion\')">Exportar a Excel</button><div class="table-container"><table id="requestTypeByOrgTable" class="striped"><thead><tr><th>Organization</th>';
+    for (var requestTypeName in requestTypeMetrics) {
+        requestTypeByOrgTableHtml += `<th>${requestTypeName} (Open)</th><th>${requestTypeName} (Closed)</th>`;
     }
     requestTypeByOrgTableHtml += '</tr></thead><tbody>';
-    for (var requestTypeName in requestTypeByOrg) {
-        requestTypeByOrgTableHtml += `<tr><td>${requestTypeName}</td>`;
-        for (var orgName in organizationMetrics) {
-            var openIssues = requestTypeByOrg[requestTypeName][orgName] ? requestTypeByOrg[requestTypeName][orgName].open : 0;
-            var closedIssues = requestTypeByOrg[requestTypeName][orgName] ? requestTypeByOrg[requestTypeName][orgName].closed : 0;
+    for (var orgName in organizationMetrics) {
+        requestTypeByOrgTableHtml += `<tr><td>${orgName}</td>`;
+        for (var requestTypeName in requestTypeMetrics) {
+            var openIssues = requestTypeByOrg[requestTypeName] && requestTypeByOrg[requestTypeName][orgName] ? requestTypeByOrg[requestTypeName][orgName].open : 0;
+            var closedIssues = requestTypeByOrg[requestTypeName] && requestTypeByOrg[requestTypeName][orgName] ? requestTypeByOrg[requestTypeName][orgName].closed : 0;
             requestTypeByOrgTableHtml += `<td>${openIssues}</td><td>${closedIssues}</td>`;
         }
         requestTypeByOrgTableHtml += '</tr>';
