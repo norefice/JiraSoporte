@@ -51,10 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
             var createdData = labels.map(date => createdIssues[date] || 0);
             var resolvedData = labels.map(date => resolvedIssues[date] || 0);
 
-            console.log('Labels:', labels); // Debugging
-            console.log('Created Data:', createdData); // Debugging
-            console.log('Resolved Data:', resolvedData); // Debugging
-
             renderChart(labels, createdData, resolvedData);
 
             // Show the chart title and canvas
