@@ -50,6 +50,27 @@
                     </div>
                 </div>
 
+                <!-- Status Change -->
+                <div class="card">
+                    <div class="card-content">
+                        <h4>Change Status</h4>
+                        <form id="status-form" method="POST" action="{{ url_for('change_status', issue_key=issue.issue_key) }}">
+                            <div class="input-field">
+                                <select name="new_status" id="new-status" required>
+                                    {% if issue.status != "EN PROCESO" %}
+                                    <option value="EN PROCESO">Start Progress</option>
+                                    {% endif %}
+                                    {% if issue.status != "FINALIZADO" %}
+                                    <option value="FINALIZADO">Mark as Done</option>
+                                    {% endif %}
+                                </select>
+                                <label>New Status</label>
+                            </div>
+                            <button class="btn waves-effect waves-light" type="submit">Update Status</button>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Comments Section -->
                 <div class="card">
                     <div class="card-content">

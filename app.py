@@ -45,5 +45,16 @@ def add_comment(issue_key):
     
     return redirect(url_for('issue_detail', issue_key=issue_key))
 
+@app.route('/issue/<issue_key>/status', methods=['POST'])
+def change_status(issue_key):
+    new_status = request.form.get('new_status')
+    
+    if jira_api.change_status(issue_key, new_status):
+        flash('Status updated successfully', 'success')
+    else:
+        flash('Failed to update status', 'error')
+    
+    return redirect(url_for('issue_detail', issue_key=issue_key))
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -290,7 +290,32 @@ def add_comment(issue_key, body, comment_type="internal", files=None):
 
     return True
 
-def change_status(issue_key, new_status_id):
+def get_available_transitions(issue_key):
+    url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}/transitions"
+    auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
+    headers = {
+        "Accept": "application/json"
+    }
+
+    response = requests.get(url, headers=headers, auth=auth)
+    
+    if response.status_code == 200:
+        transitions_data = response.json()
+        transitions = []
+        
+        # Print available transitions for debugging
+        print("Available transitions:")
+        for transition in transitions_data.get("transitions", []):
+            print(f"ID: {transition['id']}, Name: {transition['name']}")
+            transitions.append({
+                "id": transition["id"],
+                "name": transition["name"]
+            })
+        
+        return transitions
+    return []
+
+def change_status(issue_key, new_status):
     url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}/transitions"
     auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
     headers = {
@@ -298,11 +323,40 @@ def change_status(issue_key, new_status_id):
         "Content-Type": "application/json"
     }
 
+    # First, get all available transitions
+    transitions = get_available_transitions(issue_key)
+    
+    # Map our status names to Jira transition names
+    status_mapping = {
+        "CREADO": ["Start progress"],
+        "EN PROCESO": ["Start progress"],
+        "FINALIZADO": ["Mark as done"]
+    }
+    
+    # Find the matching transition
+    transition_id = None
+    for transition in transitions:
+        if any(status.lower() == transition["name"].lower() for status in status_mapping[new_status]):
+            transition_id = transition["id"]
+            break
+    
+    if not transition_id:
+        print(f"Could not find transition ID for status: {new_status}")
+        print("Available transitions:", transitions)
+        return False
+
     payload = json.dumps({
         "transition": {
-            "id": new_status_id
+            "id": transition_id
         }
     })
 
+    print(f"Sending transition request with payload: {payload}")
     response = requests.post(url, data=payload, headers=headers, auth=auth)
-    return response.status_code == 204
+    
+    if response.status_code != 204:
+        print(f"Failed to change status. Status code: {response.status_code}")
+        print(f"Response: {response.text}")
+        return False
+        
+    return True
