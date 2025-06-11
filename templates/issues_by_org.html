@@ -31,7 +31,7 @@
                 <tbody>
                     {% for issue in issues %}
                     <tr>
-                        <td><a href="{{ config.JIRA_URL }}/browse/{{ issue.issue_key }}" target="_blank">{{ issue.issue_key }}</a></td>
+                        <td><a href="{{ url_for('issue_detail', issue_key=issue.issue_key) }}">{{ issue.issue_key }}</a></td>
                         <td>{{ issue.summary }}</td>
                         <td>{{ issue.status }}</td>
                         <td>{{ issue.created }}</td>

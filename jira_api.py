@@ -127,3 +127,182 @@ def get_breach_time(customfield):
 def get_issues_by_org(org_name, start_date=None, end_date=None):
     jql = f"project = SOP AND organizations = '{org_name}'"
     return issue_search(jql=jql, start_date=start_date, end_date=end_date)
+
+def format_atlassian_doc(doc):
+    if not doc:
+        return ""
+    
+    if isinstance(doc, str):
+        return doc
+        
+    if isinstance(doc, dict):
+        if doc.get('type') == 'doc':
+            content = []
+            for block in doc.get('content', []):
+                if block.get('type') == 'paragraph':
+                    text = []
+                    for item in block.get('content', []):
+                        if item.get('type') == 'text':
+                            text.append(item.get('text', ''))
+                        elif item.get('type') == 'hardBreak':
+                            text.append('<br>')
+                    content.append('<p>' + ''.join(text) + '</p>')
+                elif block.get('type') == 'expand':
+                    for media_block in block.get('content', []):
+                        if media_block.get('type') == 'mediaSingle':
+                            for media in media_block.get('content', []):
+                                if media.get('type') == 'media':
+                                    attrs = media.get('attrs', {})
+                                    if attrs.get('type') == 'external':
+                                        content.append(f'<img src="{attrs.get("url")}" alt="Image" style="max-width: 100%;">')
+            return '\n'.join(content)
+    return str(doc)
+
+def get_issue_details(issue_key):
+    url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}"
+    auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
+    headers = {
+        "Accept": "application/json"
+    }
+
+    response = requests.get(url, headers=headers, auth=auth)
+    
+    if response.status_code == 200:
+        issue_data = response.json()
+        fields = issue_data["fields"]
+        
+        # Get comments
+        comments_url = f"{url}/comment"
+        comments_response = requests.get(comments_url, headers=headers, auth=auth)
+        comments = []
+        if comments_response.status_code == 200:
+            comments_data = comments_response.json()
+            for comment in comments_data.get("comments", []):
+                comments.append({
+                    "author": comment["author"]["displayName"],
+                    "created": date_format(comment["created"]),
+                    "body": format_atlassian_doc(comment["body"])
+                })
+
+        # Get attachments
+        attachments = []
+        for attachment in fields.get("attachment", []):
+            attachments.append({
+                "filename": attachment["filename"],
+                "content": attachment["content"],
+                "size": attachment["size"]
+            })
+
+        return {
+            "issue_id": issue_data["id"],
+            "issue_key": issue_data["key"],
+            "summary": fields.get("summary"),
+            "description": format_atlassian_doc(fields.get("description")),
+            "status": fields["status"]["name"],
+            "created": date_format(fields.get("created")),
+            "resolution_date": date_format(fields.get("resolutiondate")),
+            "creator_name": fields.get("creator", {}).get("displayName"),
+            "creator_email": fields.get("creator", {}).get("emailAddress"),
+            "request_type_name": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("requestType", {}).get("name"),
+            "organization_name": next((org.get("name") for org in fields.get(config.CUSTOM_FIELDS["organizations"], [])), ""),
+            "comments": comments,
+            "attachments": attachments
+        }
+    return None
+
+def add_comment(issue_key, body, comment_type="internal", files=None):
+    # First, add the comment
+    comment_url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}/comment"
+    auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    # Create Atlassian Document Format for the comment
+    comment_doc = {
+        "type": "doc",
+        "version": 1,
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": body
+                    }
+                ]
+            }
+        ]
+    }
+
+    # Prepare the payload
+    payload = {
+        "body": comment_doc
+    }
+
+    # Add visibility restriction for internal comments
+    if comment_type == "internal":
+        payload["properties"] = [
+            {
+                "key": "sd.public.comment",
+                "value": {
+                    "internal": True
+                }
+            }
+        ]
+
+    response = requests.post(comment_url, data=json.dumps(payload), headers=headers, auth=auth)
+    
+    if response.status_code != 201:
+        print(f"Failed to add comment. Status: {response.status_code}")
+        print(f"Response: {response.text}")
+        return False
+
+    # If there are files, attach them
+    if files:
+        comment_id = response.json()["id"]
+        for file in files:
+            if file.filename:  # Check if a file was selected
+                # Prepare the attachment
+                files = {
+                    'file': (file.filename, file.read(), file.content_type)
+                }
+                
+                # Upload the attachment
+                attachment_url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}/attachments"
+                attachment_headers = {
+                    "Accept": "application/json",
+                    "X-Atlassian-Token": "no-check"
+                }
+                
+                attachment_response = requests.post(
+                    attachment_url,
+                    files=files,
+                    headers=attachment_headers,
+                    auth=auth
+                )
+                
+                if attachment_response.status_code != 200:
+                    print(f"Failed to attach file {file.filename}. Status: {attachment_response.status_code}")
+                    print(f"Response: {attachment_response.text}")
+                    continue
+
+    return True
+
+def change_status(issue_key, new_status_id):
+    url = f"{config.JIRA_URL}/rest/api/3/issue/{issue_key}/transitions"
+    auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    payload = json.dumps({
+        "transition": {
+            "id": new_status_id
+        }
+    })
+
+    response = requests.post(url, data=payload, headers=headers, auth=auth)
+    return response.status_code == 204

@@ -40,4 +40,188 @@
     justify-content: center;
 }
 
+/* General styles */
+body {
+    background-color: #f5f5f5;
+}
+
+.container {
+    padding-top: 20px;
+}
+
+/* Card styles */
+.card {
+    margin-bottom: 20px;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+/* Comment styles */
+.comment {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 15px 0;
+    margin-bottom: 15px;
+}
+
+.comment:last-child {
+    border-bottom: none;
+}
+
+.comment-body {
+    margin-top: 10px;
+    padding: 15px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+/* Internal comment style */
+.comment[data-type="internal"] .comment-body {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+/* Customer response style */
+.comment[data-type="customer"] .comment-body {
+    background-color: #f1f8e9;
+    border-left: 4px solid #4caf50;
+}
+
+/* Comment form styles */
+#comment-form {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+#comment-form .input-field {
+    margin-bottom: 20px;
+}
+
+#comment-form textarea {
+    min-height: 100px;
+}
+
+#comment-form .btn {
+    margin-top: 10px;
+}
+
+/* Attachment styles */
+.attachment {
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.attachment-size {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+/* Form styles */
+.input-field {
+    margin-bottom: 20px;
+}
+
+.btn {
+    margin-top: 10px;
+}
+
+/* Flash messages */
+.flash-messages {
+    margin-top: 20px;
+}
+
+.flash-message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.flash-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.flash-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Description content */
+.description-content {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+/* Status change form */
+#status-form {
+    margin-top: 20px;
+}
+
+/* Navigation */
+nav {
+    margin-bottom: 20px;
+}
+
+.brand-logo {
+    margin-left: 20px;
+}
+
+/* Table styles */
+.table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+table.striped {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.striped th,
+table.striped td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+table.striped th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+table.striped tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Comment type info styles */
+.comment-type-info {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    border-left: 4px solid #2196f3;
+}
+
+.info-text {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    color: #0d47a1;
+    font-size: 0.9em;
+}
+
+.info-text i {
+    margin-right: 8px;
+}
+
 /* Add your custom styles here */
