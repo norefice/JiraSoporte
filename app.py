@@ -21,7 +21,16 @@ def issues_by_org():
     org_name = request.args.get('org_name')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    
+    if not org_name:
+        flash('Please provide an organization name', 'error')
+        return redirect(url_for('index'))
+    
     issues = jira_api.get_issues_by_org(org_name, start_date=start_date, end_date=end_date)
+    
+    if not issues:
+        flash(f'No issues found for organization "{org_name}"', 'warning')
+    
     return render_template('issues_by_org.html', org_name=org_name, issues=issues, config=config)
 
 @app.route('/issue/<issue_key>')
@@ -57,4 +66,4 @@ def change_status(issue_key):
     return redirect(url_for('issue_detail', issue_key=issue_key))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)

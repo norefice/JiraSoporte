@@ -15,38 +15,57 @@
     </nav>
     <div class="container">
         <h1>Issues for {{ org_name }}</h1>
-        <div class="table-container">
-            <table class="striped">
-                <thead>
-                    <tr>
-                        <th>Issue Key</th>
-                        <th>Summary</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Resolution Date</th>
-                        <th>Request Type</th>
-                        <!-- Add more columns as needed -->
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for issue in issues %}
-                    <tr>
-                        <td><a href="{{ url_for('issue_detail', issue_key=issue.issue_key) }}">{{ issue.issue_key }}</a></td>
-                        <td>{{ issue.summary }}</td>
-                        <td>{{ issue.status }}</td>
-                        <td>{{ issue.created }}</td>
-                        <td>{{ issue.resolution_date }}</td>
-                        <td>{{ issue.request_type_name }}</td>
-                        <!-- Add more columns as needed -->
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="card-panel {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if issues %}
+            <div class="table-container">
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Issue Key</th>
+                            <th>Summary</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Resolution Date</th>
+                            <th>Request Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                        <tr>
+                            <td><a href="{{ url_for('issue_detail', issue_key=issue.issue_key) }}">{{ issue.issue_key }}</a></td>
+                            <td>{{ issue.summary }}</td>
+                            <td>{{ issue.status }}</td>
+                            <td>{{ issue.created }}</td>
+                            <td>{{ issue.resolution_date }}</td>
+                            <td>{{ issue.request_type_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-panel">
+                <p>No issues found for organization "{{ org_name }}" in the selected date range.</p>
+                <p>Please check:</p>
+                <ul>
+                    <li>The organization name is correct</li>
+                    <li>The date range is appropriate</li>
+                    <li>The organization has issues in the system</li>
+                </ul>
+            </div>
+        {% endif %}
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script>
-        // Remove DataTables initialization
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>

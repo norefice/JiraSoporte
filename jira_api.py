@@ -125,8 +125,16 @@ def get_breach_time(customfield):
     return None
 
 def get_issues_by_org(org_name, start_date=None, end_date=None):
-    jql = f"project = SOP AND organizations = '{org_name}'"
-    return issue_search(jql=jql, start_date=start_date, end_date=end_date)
+    if not org_name:
+        return []
+        
+    try:
+        jql = f"project = SOP AND organizations = '{org_name}'"
+        issues = issue_search(jql=jql, start_date=start_date, end_date=end_date)
+        return issues if issues is not None else []
+    except Exception as e:
+        print(f"Error getting issues for organization {org_name}: {str(e)}")
+        return []
 
 def format_atlassian_doc(doc):
     if not doc:
