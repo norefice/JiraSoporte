@@ -4,102 +4,125 @@ import config
 import json
 from datetime import datetime
 
-def issue_search(jql="project = SOP", max_results=100, start_at=0, start_date=None, end_date=None):
-    url = f"{config.JIRA_URL}/rest/api/3/search"
+def issue_search(jql=None, max_results=100, start_at=0, start_date=None, end_date=None):
+    if jql is None:
+        jql = f"project = {config.PROJECT_CODE}"
+    url = f"{config.JIRA_URL}/rest/api/3/search/jql"
     auth = HTTPBasicAuth(config.JIRA_USER, config.JIRA_API_TOKEN)
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
 
+    # JQL: incluir todo el dÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ­a final usando < dÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ­a siguiente
     date_filter = ""
     if start_date and end_date:
-        date_filter = f" AND created >= '{start_date}' AND created <= '{end_date}'"
+        from datetime import datetime as dt, timedelta
+        try:
+            end_dt = dt.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            end_next = end_dt.strftime("%Y-%m-%d")
+            date_filter = f" AND created >= '{start_date}' AND created < '{end_next}'"
+        except ValueError:
+            date_filter = f" AND created >= '{start_date}' AND created <= '{end_date}'"
     elif start_date:
         date_filter = f" AND created >= '{start_date}'"
     elif end_date:
-        date_filter = f" AND created <= '{end_date}'"
+        try:
+            from datetime import datetime as dt, timedelta
+            end_dt = dt.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            date_filter = f" AND created < '{end_dt.strftime('%Y-%m-%d')}'"
+        except ValueError:
+            date_filter = f" AND created <= '{end_date}'"
 
     jql += date_filter
+    print(f"[JIRA] JQL: {jql}")
 
     all_issues = []
-    total = 1  # Inicializamos con un valor mayor a start_at para entrar en el bucle
+    next_page_token = None
 
-    while start_at < total:
-        payload = json.dumps({
-            "expand": [],
+    while True:
+        payload_dict = {
             "fields": [
-                "created",            # Created
-                "issuetype",          # Issue Type
-                "key",                # Issue Key
-                "status",             # Status
-                config.CUSTOM_FIELDS["organizations"],  # Organizations
-                config.CUSTOM_FIELDS["request_type"],   # Request Type
-                "summary",            # Summary
-                config.CUSTOM_FIELDS["impacto"],        # Impacto
-                config.CUSTOM_FIELDS["impact"],         # Impact
-                config.CUSTOM_FIELDS["vulnerability"],  # Vulnerability
-                config.CUSTOM_FIELDS["information"],    # Information
-                config.CUSTOM_FIELDS["severity"],       # Severity
-                "labels",             # Labels
-                "creator",            # Creator
-                config.CUSTOM_FIELDS["satisfaction"],   # Satisfaction
-                config.CUSTOM_FIELDS["date_of_first_response"],  # Date of First Response
-                "resolutiondate",     # Resolved
-                config.CUSTOM_FIELDS["time_to_resolution"],      # Time to resolution
-                config.CUSTOM_FIELDS["time_to_first_response"],  # Time to first response
-                config.CUSTOM_FIELDS["time_to_resolution_custom"]  # Time to resolution
+                "created",
+                "issuetype",
+                "key",
+                "status",
+                config.CUSTOM_FIELDS["organizations"],
+                config.CUSTOM_FIELDS["request_type"],
+                "summary",
+                config.CUSTOM_FIELDS["impacto"],
+                config.CUSTOM_FIELDS["impact"],
+                config.CUSTOM_FIELDS["vulnerability"],
+                config.CUSTOM_FIELDS["information"],
+                config.CUSTOM_FIELDS["severity"],
+                "labels",
+                "creator",
+                config.CUSTOM_FIELDS["satisfaction"],
+                config.CUSTOM_FIELDS["date_of_first_response"],
+                "resolutiondate",
+                config.CUSTOM_FIELDS["time_to_resolution"],
+                config.CUSTOM_FIELDS["time_to_first_response"],
+                config.CUSTOM_FIELDS["time_to_resolution_custom"]
             ],
             "fieldsByKeys": True,
             "jql": jql,
             "maxResults": max_results,
-            "startAt": start_at
-        })
+        }
+        if next_page_token is not None:
+            payload_dict["nextPageToken"] = next_page_token
 
-        response = requests.post(url, data=payload, headers=headers, auth=auth)
+        response = requests.post(url, data=json.dumps(payload_dict), headers=headers, auth=auth)
 
         if response.status_code == 200:
             data = response.json()
             issues = data.get("issues", [])
-            total = data.get("total", 0)
             all_issues.extend(issues)
-            start_at += max_results
+            next_page_token = data.get("nextPageToken")
+            if not next_page_token or not issues:
+                break
         else:
-            print(f"Error en la solicitud: {response.status_code}")
-            print(response.text)
-            return None
+            error_msg = f"JIRA API error {response.status_code}: {response.text[:500]}"
+            print(error_msg)
+            return {"error": error_msg, "issues": None}
 
     processed_issues = []
 
     for issue in all_issues:
-        fields = issue["fields"]
+        try:
+            fields = issue.get("fields", {})
+            status_obj = fields.get("status") or {}
+            orgs = fields.get(config.CUSTOM_FIELDS["organizations"], [])
+            req_type = fields.get(config.CUSTOM_FIELDS["request_type"], {}) or {}
 
-        processed_issue = {
-            "issue_id": issue.get("id"),
-            "issue_key": issue.get("key"),
-            "summary": fields.get("summary"),
-            "created": date_format(fields.get("created")),
-            "status": fields["status"].get("name"),
-            "resolution_date": date_format(fields.get("resolutiondate")),
-            "creator_name": fields.get("creator", {}).get("displayName"),
-            "creator_email": fields.get("creator", {}).get("emailAddress"),
-            "request_type_name": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("requestType", {}).get("name"),
-            "current_status": fields.get(config.CUSTOM_FIELDS["request_type"], {}).get("currentStatus", {}).get("status"),
-            "organization_name": next((org.get("name") for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
-            "organization_id": next((int(org.get("id")) for org in issue["fields"].get(config.CUSTOM_FIELDS["organizations"], [])), ""),
-            "impacto": fields.get(config.CUSTOM_FIELDS["impacto"]),
-            "impact": fields.get(config.CUSTOM_FIELDS["impact"]),
-            "vulnerability": fields.get(config.CUSTOM_FIELDS["vulnerability"]),
-            "information": fields.get(config.CUSTOM_FIELDS["information"]),
-            "severity": fields.get(config.CUSTOM_FIELDS["severity"]),
-            "labels": fields.get("labels"),
-            "satisfaction": fields.get(config.CUSTOM_FIELDS["satisfaction"]),
-            "date_of_first_response": date_format(fields.get(config.CUSTOM_FIELDS["date_of_first_response"])),
-            "time_to_resolution": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_resolution"]))),
-            "time_to_first_response": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_first_response"]))),
-            "time_to_resolution_custom": date_format(fields.get(config.CUSTOM_FIELDS["time_to_resolution_custom"]))
-        }
-        processed_issues.append(processed_issue)
+            processed_issue = {
+                "issue_id": issue.get("id"),
+                "issue_key": issue.get("key"),
+                "summary": fields.get("summary"),
+                "created": date_format(fields.get("created")),
+                "status": status_obj.get("name", ""),
+                "resolution_date": date_format(fields.get("resolutiondate")),
+                "creator_name": (fields.get("creator") or {}).get("displayName"),
+                "creator_email": (fields.get("creator") or {}).get("emailAddress"),
+                "request_type_name": (req_type.get("requestType") or {}).get("name"),
+                "current_status": (req_type.get("currentStatus") or {}).get("status"),
+                "organization_name": next((org.get("name") for org in orgs), "") if isinstance(orgs, list) else "",
+                "organization_id": next((int(org.get("id")) for org in orgs if org.get("id")), "") if isinstance(orgs, list) else "",
+                "impacto": fields.get(config.CUSTOM_FIELDS["impacto"]),
+                "impact": fields.get(config.CUSTOM_FIELDS["impact"]),
+                "vulnerability": fields.get(config.CUSTOM_FIELDS["vulnerability"]),
+                "information": fields.get(config.CUSTOM_FIELDS["information"]),
+                "severity": fields.get(config.CUSTOM_FIELDS["severity"]),
+                "labels": fields.get("labels"),
+                "satisfaction": fields.get(config.CUSTOM_FIELDS["satisfaction"]),
+                "date_of_first_response": date_format(fields.get(config.CUSTOM_FIELDS["date_of_first_response"])),
+                "time_to_resolution": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_resolution"]))),
+                "time_to_first_response": date_format(get_breach_time(fields.get(config.CUSTOM_FIELDS["time_to_first_response"]))),
+                "time_to_resolution_custom": date_format(fields.get(config.CUSTOM_FIELDS["time_to_resolution_custom"]))
+            }
+            processed_issues.append(processed_issue)
+        except Exception as e:
+            print(f"Error procesando issue {issue.get('key', '?')}: {e}")
+            continue
 
     for processed_issue in processed_issues:
         for key, value in processed_issue.items():
@@ -110,14 +133,25 @@ def issue_search(jql="project = SOP", max_results=100, start_at=0, start_date=No
 def date_format(date):
     if isinstance(date, dict):
         date = date.get("jira")
-    if date is None:
+    if date is None or date == "":
         return ""
-    # Parsear la cadena de tiempo
-    original_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-    process_date = datetime.strptime(date, original_format)
-    # Formatear la fecha en el formato deseado
-    custom_format = "%Y-%m-%d %H:%M:00"  # Ejemplo: 2025-02-17 14:13:00 
-    return process_date.strftime(custom_format)
+    if not isinstance(date, str):
+        return str(date)
+    # Formatos que JIRA puede devolver
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+    ]
+    for fmt in formats:
+        try:
+            process_date = datetime.strptime(date.replace("Z", "+00:00").rstrip("Z"), fmt)
+            return process_date.strftime("%Y-%m-%d %H:%M:00")
+        except (ValueError, TypeError):
+            continue
+    return date[:19] if len(date) >= 19 else date  # fallback: primeros 19 chars
 
 def get_breach_time(customfield):
     if customfield and "completedCycles" in customfield and customfield["completedCycles"]:
@@ -129,9 +163,11 @@ def get_issues_by_org(org_name, start_date=None, end_date=None):
         return []
         
     try:
-        jql = f"project = SOP AND organizations = '{org_name}'"
-        issues = issue_search(jql=jql, start_date=start_date, end_date=end_date)
-        return issues if issues is not None else []
+        jql = f"project = {config.PROJECT_CODE} AND organizations = '{org_name}'"
+        result = issue_search(jql=jql, start_date=start_date, end_date=end_date)
+        if isinstance(result, dict) and result.get("issues") is None:
+            return []
+        return result if result is not None else []
     except Exception as e:
         print(f"Error getting issues for organization {org_name}: {str(e)}")
         return []

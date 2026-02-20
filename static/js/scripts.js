@@ -35,7 +35,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            var { createdIssues, resolvedIssues } = renderTables(data);
+            var issues = Array.isArray(data) ? data : (data.issues || []);
+            if (data.error) {
+                alert('Error: ' + data.error);
+            }
+            if (!issues.length) {
+                document.getElementById('metrics').innerHTML = '<p class="grey-text">No se encontraron issues en el rango de fechas seleccionado. Comprueba las fechas y que el proyecto tenga datos.</p>';
+                document.getElementById('issuesChartTitle').style.display = 'none';
+                document.getElementById('issuesChart').style.display = 'none';
+                return;
+            }
+            var { createdIssues, resolvedIssues } = renderTables(issues);
 
             // Prepare data for the chart
             var startDate = new Date(document.getElementById('start_date').value);
@@ -58,6 +68,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var issuesChart = document.getElementById('issuesChart');
             issuesChartTitle.style.display = 'block';
             issuesChart.style.display = 'block';
+        })
+        .catch(function(err) {
+            alert('Error de conexión: ' + (err.message || 'No se pudo obtener la respuesta del servidor.'));
         })
         .finally(() => {
             loadingOverlay.style.display = 'none';

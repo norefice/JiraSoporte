@@ -14,7 +14,12 @@ def issue_search():
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
     data = jira_api.issue_search(start_date=start_date, end_date=end_date)
-    return jsonify(data)
+    # Si la API devolviÃ³ error, enviar estructura que el frontend pueda mostrar
+    if isinstance(data, dict) and data.get("issues") is None:
+        return jsonify({"error": data.get("error", "Error al obtener datos de JIRA"), "issues": []})
+    if data is None:
+        return jsonify({"error": "No se pudo conectar con JIRA", "issues": []})
+    return jsonify({"issues": data})
 
 @app.route('/issues_by_org')
 def issues_by_org():
@@ -66,4 +71,4 @@ def change_status(issue_key):
     return redirect(url_for('issue_detail', issue_key=issue_key))
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5002)
